@@ -118,7 +118,9 @@ button{font-family:inherit}
 .rules .sec{margin-top:0}
 
 /* ---------- หน้าด่าน ---------- */
-.hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;margin-block:18px 14px}
+.backbar{margin-top:14px}
+.btn.small{padding:6px 12px;font-size:14px;box-shadow:2px 2px 0 var(--shadow)}
+.hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;margin-block:12px 14px}
 .hud h2{font-size:clamp(22px,5vw,30px);margin-top:6px}
 .hud-right{display:grid;gap:2px;justify-items:end}
 .lives{font-size:28px;line-height:1;color:var(--bad);letter-spacing:.1em}
@@ -186,8 +188,9 @@ button{font-family:inherit}
 
 /* ---------- หน้าต่างผลลัพธ์ ---------- */
 .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:rgba(8,13,28,.6);z-index:20;overflow-y:auto}
-.dialog{max-width:520px;width:100%}
-.dialog h2{font-size:26px;margin-bottom:10px}
+.dialog{max-width:520px;width:100%;position:relative}
+.dialog h2{font-size:26px;margin-bottom:10px;padding-right:44px}
+.dialog .close{position:absolute;top:10px;right:12px;width:36px;height:36px;border:2px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:700 22px/1 var(--f-display);cursor:pointer}
 .dialog .btnrow{margin-top:16px}
 .dialog ul{padding-left:1.2em;margin:.4em 0}
 
@@ -263,6 +266,7 @@ button{font-family:inherit}
 
     <!-- ================= หน้าด่าน ================= -->
     <section id="screen-mission" class="screen" hidden>
+      <div class="backbar"><button type="button" class="btn small" id="btnBack">← หน้าแรก</button></div>
       <div class="hud">
         <div><span class="tag" id="mTag"></span><h2 id="mTitle"></h2></div>
         <div class="hud-right">
@@ -293,6 +297,7 @@ button{font-family:inherit}
 
   <div id="overlay" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle">
     <div class="dialog card">
+      <button type="button" class="close" id="ovClose" aria-label="ปิดหน้าต่าง">×</button>
       <h2 id="ovTitle"></h2>
       <div id="ovBody"></div>
       <div class="btnrow" id="ovBtns"></div>
@@ -736,7 +741,7 @@ function showOverlay(title, bodyHtml, buttons) {
 function hideOverlay() { $('#overlay').hidden = true; }
 
 function show(name) {
-  stopTimer(); stopHero();
+  stopTimer(); stopHero(); hideOverlay();
   ['home', 'mission', 'result'].forEach(s => { $('#screen-' + s).hidden = (s !== name); });
   if (name === 'home') { renderHome(); startHero(); }
   try { window.scrollTo(0, 0); } catch (err) { /* ไม่เป็นไร */ }
@@ -855,10 +860,22 @@ function mistake() {
   renderHud(); shake();
   if (cur.lives <= 0) lose('ตอบผิดครบ 3 ครั้ง');
 }
+// ปุ่มบนหน้าด่านหลังจบด่าน (ใช้ต่อได้แม้ผู้เล่นปิดหน้าต่างผลลัพธ์ไปแล้ว)
+function endControls(won) {
+  const list = [];
+  if (won) {
+    const nxt = nextUnpassed(cur.i);
+    list.push(nxt >= 0 ? { text: 'ด่านถัดไป →', cls: 'primary', fn: () => enterMission(nxt) }
+                       : { text: 'ดูผลรวม →', cls: 'primary', fn: showResult });
+  }
+  list.push({ text: 'เล่นด่านนี้ใหม่', cls: won ? '' : 'primary', fn: () => enterMission(cur.i, true) });
+  list.push({ text: '← หน้าแรก', fn: () => show('home') });
+  setControls(list);
+}
 function lose(reason, title) {
   cur.phase = 'over';
   stopTimer();
-  setControls([]);
+  endControls(false);
   showOverlay(title || 'หัวใจหมดแล้ว', '<p>' + reason + '</p><p>ไม่เป็นไร กดลองใหม่ได้เลย ชุดตัวเลขจะถูกสุ่มใหม่</p>', [
     { text: 'ลองใหม่', cls: 'primary', fn: () => enterMission(cur.i, true) },
     { text: 'ดูหลักการอีกครั้ง', fn: () => enterMission(cur.i) },
@@ -872,8 +889,8 @@ function nextUnpassed(from) {
 function finishMission(score, bodyHtml) {
   cur.phase = 'won';
   stopTimer();
-  setControls([]);
   state.scores[cur.i] = Math.max(state.scores[cur.i] || 0, score);
+  endControls(true);
   renderTotal(); renderHud();
   const nxt = nextUnpassed(cur.i);
   const btns = [];
@@ -1151,6 +1168,10 @@ function showResult() {
 
 /* ---------- เริ่มเกม ---------- */
 $('#btnHome').addEventListener('click', () => show('home'));
+$('#btnBack').addEventListener('click', () => show('home'));   // ปุ่ม "← หน้าแรก" บนหน้าด่าน (กลับได้ทุกเมื่อ)
+$('#ovClose').addEventListener('click', hideOverlay);
+$('#overlay').addEventListener('click', (ev) => { if (ev.target === $('#overlay')) hideOverlay(); });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !$('#overlay').hidden) hideOverlay(); });
 $('#btnStart').addEventListener('click', () => {
   if (allPassed()) { state.scores = [null, null, null]; renderTotal(); enterMission(0); return; }
   const first = state.scores.findIndex(s => s === null);
