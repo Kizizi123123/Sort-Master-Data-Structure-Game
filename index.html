@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sort Master</title>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Prompt:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap">
+<style>
+/* รูปแบบหน้า: กระดาษกราฟ — กล่องขอบหนา เงาแข็ง ข้อความชิดซ้าย
+   จุดเด่นจุดเดียวคือกระดานแท่งตัวเลขที่ขยับสลับตำแหน่งจริง */
+:root{
+  --paper:#f6f8fc;
+  --grid:#dfe7f3;
+  --ink:#12203a;
+  --ink-soft:#4a5875;
+  --card:#ffffff;
+  --line:#12203a;
+  --shadow:#12203a;
+  --accent:#ff6a2b;
+  --accent-ink:#12203a;
+  --bar:#cdd8f0;
+  --on:#12203a;
+  --on-bright:#12203a;
+  --cmp:#ffc93c;
+  --swp:#ff5d73;
+  --sel:#36b5f0;
+  --done:#2ecf8f;
+  --zone:#d3c6ff;
+  --good:#0f7a55;
+  --bad:#c42b45;
+  --f-display:'Prompt','Noto Sans Thai',system-ui,sans-serif;
+  --f-body:'Sarabun','Noto Sans Thai',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0e1526; --grid:#1a2641; --ink:#e9efff; --ink-soft:#a5b2d2; --card:#16203a;
+    --line:#7f93c7; --shadow:#050913; --accent:#ff7a3d; --bar:#34456f; --on:#e9efff;
+    --cmp:#e8b020; --swp:#ff6f84; --sel:#3aa8e0; --done:#27b980; --zone:#5a4fa0;
+    --good:#52d6a2; --bad:#ff7a8e; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0e1526; --grid:#1a2641; --ink:#e9efff; --ink-soft:#a5b2d2; --card:#16203a;
+  --line:#7f93c7; --shadow:#050913; --accent:#ff7a3d; --bar:#34456f; --on:#e9efff;
+  --cmp:#e8b020; --swp:#ff6f84; --sel:#3aa8e0; --done:#27b980; --zone:#5a4fa0;
+  --good:#52d6a2; --bad:#ff7a8e; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  margin:0;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink);
+  font:400 16px/1.65 var(--f-body);
+}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.25;text-wrap:balance}
+p{margin:0 0 .6em}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.app{max-width:900px;margin-inline:auto;padding-inline:16px;padding-block:14px 56px}
+
+/* ---------- แถบบน ---------- */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:4px 10px}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--ink);font:800 20px var(--f-display)}
+.brand svg rect{stroke:var(--line);stroke-width:2}
+.total{font:500 14px var(--f-mono);color:var(--ink-soft);white-space:nowrap}
+.total b{font-size:20px;color:var(--ink)}
+
+/* ---------- ปุ่ม ---------- */
+.btnrow{display:flex;flex-wrap:wrap;gap:12px}
+.btn{
+  font:600 16px/1.2 var(--f-display);padding:12px 18px;border:2px solid var(--line);border-radius:8px;
+  background:var(--card);color:var(--ink);cursor:pointer;box-shadow:3px 3px 0 var(--shadow);
+  transition:transform .08s,box-shadow .08s;
+}
+.btn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.big{padding:14px 26px;font-size:18px}
+.btn.grow{flex:1 1 150px}
+
+/* ---------- การ์ด ---------- */
+.card{background:var(--card);border:2px solid var(--line);border-radius:10px;box-shadow:4px 4px 0 var(--shadow);padding:16px}
+.sec{font-size:20px;margin-block:28px 12px}
+.eyebrow{font:700 12px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+
+/* ---------- หน้าแรก ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:center;padding-block:18px 6px}
+.hero h1{font-size:clamp(44px,9vw,76px);font-weight:800;letter-spacing:-.02em;margin-bottom:12px}
+.hero h1 span{background:linear-gradient(transparent 62%,var(--cmp) 62%);padding-inline:2px}
+.lead{font-size:18px;color:var(--ink-soft);max-width:34em;margin-bottom:20px}
+.hero-art .arena-wrap{--h:190px}
+.hero-note{font:500 13px var(--f-mono);color:var(--ink-soft);margin-top:8px}
+.missions{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.mrow{
+  width:100%;display:flex;align-items:center;gap:16px;text-align:left;padding:14px 16px;cursor:pointer;
+  background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:10px;box-shadow:4px 4px 0 var(--shadow);
+  transition:transform .08s,box-shadow .08s;font-size:16px;
+}
+.mrow:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow)}
+.mno{flex:none;width:44px;height:44px;display:grid;place-items:center;border:2px solid var(--line);border-radius:8px;background:var(--cmp);color:var(--on-bright);font:800 22px var(--f-display)}
+.mrow.passed .mno{background:var(--done)}
+.mtext{flex:1;min-width:0;display:grid}
+.mtext b{font:700 18px var(--f-display)}
+.mtext small{color:var(--ink-soft);font-size:15px}
+.mstate{flex:none;font:500 13px var(--f-mono);color:var(--ink-soft);text-align:right}
+.rules ul{margin:0;padding-left:1.2em;display:grid;gap:8px}
+.rules .sec{margin-top:0}
+
+/* ---------- หน้าด่าน ---------- */
+.hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;margin-block:18px 14px}
+.hud h2{font-size:clamp(22px,5vw,30px);margin-top:6px}
+.hud-right{display:grid;gap:2px;justify-items:end}
+.lives{font-size:28px;line-height:1;color:var(--bad);letter-spacing:.1em}
+.mscore{font:500 14px var(--f-mono);color:var(--ink-soft)}
+.tag{display:inline-block;font:700 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border:2px solid var(--line);border-radius:6px;background:var(--cmp);color:var(--on-bright)}
+.learn{margin-bottom:16px}
+.learn summary{cursor:pointer;font:700 17px var(--f-display)}
+.learn[open] summary{margin-bottom:10px}
+.learn ol{margin:6px 0 10px;padding-left:1.3em;display:grid;gap:4px}
+.learn p{margin-bottom:.5em}
+.learn .note{padding:10px 12px;border:2px dashed var(--line);border-radius:8px;background:var(--paper)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;color:var(--ink-soft);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-radius:4px;vertical-align:-2px;margin-right:5px}
+.prompt{font:600 clamp(17px,3.6vw,20px)/1.5 var(--f-display);margin:0 0 14px;min-height:3em}
+.prompt b{font-family:var(--f-mono);font-size:1.1em;background:var(--cmp);color:var(--on-bright);padding:0 6px;border-radius:4px}
+.caption{min-height:3.3em;margin:12px 0 0;font-weight:500;color:var(--ink-soft)}
+.caption.ok{color:var(--good)}
+.caption.bad{color:var(--bad)}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-block:4px 14px;min-height:30px}
+.chip{font:500 14px var(--f-mono);border:2px solid var(--line);border-radius:6px;padding:1px 10px;background:var(--paper)}
+.chip b{font-weight:700}
+.stage.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* ---------- กระดานแท่ง ---------- */
+.arena-wrap{--h:230px}
+.arena{position:relative;height:var(--h);border-bottom:3px solid var(--line)}
+.bar{position:absolute;left:0;bottom:0;height:100%;width:calc(100% / var(--n));transform:translateX(calc(var(--pos) * 100%));transition:transform .4s cubic-bezier(.3,.7,.3,1)}
+.fill{
+  position:absolute;left:3px;right:3px;bottom:0;border:2px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;
+  background:var(--bar);color:var(--on);display:flex;justify-content:center;align-items:flex-start;padding-top:6px;
+  font:700 clamp(15px,3.8vw,22px) var(--f-mono);transition:transform .12s,background-color .15s;
+}
+.bar.done .fill{background:var(--done);color:var(--on-bright)}
+.bar.zone .fill{background:var(--zone);color:var(--on)}
+.bar.cmp .fill{background:var(--cmp);color:var(--on-bright)}
+.bar.sel .fill{background:var(--sel);color:var(--on-bright)}
+.bar.swp .fill{background:var(--swp);color:var(--on-bright)}
+.bar.target .fill{outline:3px dashed var(--accent);outline-offset:3px}
+.arena.clickable .bar{cursor:pointer}
+.arena.clickable .bar:hover .fill{transform:translateY(-4px)}
+.slots{display:grid;grid-template-columns:repeat(var(--n),1fr);font:500 12px var(--f-mono);color:var(--ink-soft);text-align:center;padding-top:4px}
+.slots span.on{color:var(--accent);font-weight:700}
+@media (max-width:480px){.slots small{display:none}}
+.arena-wrap.mini{--h:64px}
+.mini .fill{left:1px;right:1px;border-width:1.5px;border-radius:4px 4px 0 0}
+.mini .fill span{display:none}
+.mini .bar{transition-duration:.15s}
+.mini .arena{border-bottom-width:2px}
+
+/* ---------- ผลการแข่ง ---------- */
+.race{margin-top:18px}
+.race h3{font-size:18px;margin-bottom:6px}
+.race-row{display:grid;grid-template-columns:minmax(150px,200px) minmax(0,1fr);gap:14px;align-items:center;padding-block:10px;border-top:2px dashed var(--grid)}
+.race-name{font:700 16px var(--f-display)}
+.race-count{font:500 13px var(--f-mono);color:var(--ink-soft)}
+.race-count b{font-size:20px;color:var(--ink)}
+.pick,.badge{display:inline-block;font:700 11px var(--f-mono);padding:1px 7px;border:2px solid var(--line);border-radius:6px;margin-left:6px;vertical-align:1px}
+.pick{background:var(--cmp);color:var(--on-bright)}
+.badge{background:var(--done);color:var(--on-bright)}
+.verdict{margin-top:12px;padding:12px 14px;border:2px solid var(--line);border-radius:8px;background:var(--paper)}
+.v-head{font:700 17px/1.4 var(--f-display)}
+.v-head.ok{color:var(--good)}
+.v-head.bad{color:var(--bad)}
+
+/* ---------- หน้าต่างผลลัพธ์ ---------- */
+.overlay{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:rgba(8,13,28,.6);z-index:20;overflow-y:auto}
+.dialog{max-width:520px;width:100%}
+.dialog h2{font-size:26px;margin-bottom:10px}
+.dialog .btnrow{margin-top:16px}
+.dialog ul{padding-left:1.2em;margin:.4em 0}
+
+/* ---------- หน้าสรุปผล ---------- */
+.rank{font-size:clamp(34px,8vw,56px);font-weight:800;letter-spacing:-.02em;margin-block:4px 6px}
+.big-score{font:500 18px var(--f-mono);margin-bottom:10px}
+.big-score b{font-size:44px}
+.score-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.score-list li{display:flex;justify-content:space-between;gap:12px;border-bottom:2px dashed var(--grid);padding-bottom:6px}
+.score-list li span:last-child{font-family:var(--f-mono);font-weight:700;white-space:nowrap}
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.algo-card h3{font-size:18px;margin-bottom:8px}
+.algo-card dl{margin:0;display:grid;gap:6px;font-size:15px}
+.algo-card dt{font:700 12px var(--f-mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
+.algo-card dd{margin:0}
+.result-actions{margin-top:24px}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .race-row{grid-template-columns:minmax(0,1fr);gap:6px}
+  .mstate{display:none}
+  .hud-right{justify-items:start}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <button type="button" class="brand" id="btnHome" aria-label="กลับหน้าแรก">
+      <svg viewBox="0 0 28 24" width="28" height="24" aria-hidden="true">
+        <rect x="2" y="14" width="6" height="8" fill="#ffc93c"/><rect x="11" y="8" width="6" height="14" fill="#36b5f0"/><rect x="20" y="2" width="6" height="20" fill="#2ecf8f"/>
+      </svg>
+      Sort Master
+    </button>
+    <div class="total" aria-live="polite">คะแนนรวม <b id="totalScore">0</b>/300</div>
+  </header>
+
+  <main>
+    <!-- ================= หน้าแรก ================= -->
+    <section id="screen-home" class="screen">
+      <div class="hero">
+        <div class="hero-text">
+          <p class="eyebrow">CP241 · Sorting Algorithms</p>
+          <h1><span>Sort</span> Master</h1>
+          <p class="lead">เกมฝึกคิดแบบ Algorithm เรียงลำดับ คุณต้องเป็น Bubble Sort และ Selection Sort ด้วยตัวเอง แล้วทายว่า Algorithm ไหนจะชนะบนข้อมูลชุดไหน ทุกคำตอบถูกตรวจจากโค้ด Sorting จริงที่รันอยู่เบื้องหลัง</p>
+          <div class="btnrow">
+            <button type="button" class="btn primary big" id="btnStart">เริ่มเล่น ▶</button>
+            <button type="button" class="btn big" id="btnResult" hidden>ดูผลรวม</button>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div id="heroArena"></div>
+          <p class="hero-note">Insertion Sort กำลังทำงานให้ดูสดๆ</p>
+        </div>
+      </div>
+
+      <h2 class="sec">เลือกด่าน</h2>
+      <ol class="missions" id="missionList"></ol>
+
+      <div class="card rules" style="margin-top:28px">
+        <h2 class="sec">กติกา</h2>
+        <ul>
+          <li>มี 3 ด่าน เล่นตามลำดับหรือเลือกเองก็ได้ ผ่านครบทั้ง 3 ด่านจึงจบเกมและได้ระดับ (Rank)</li>
+          <li><b>ด่าน 1 และ 2:</b> คุณคือ Algorithm ตัดสินใจทีละขั้นตามกฎ ตอบผิด 1 ครั้งเสียหัวใจ 1 ดวงและหัก 20 คะแนน หัวใจหมด 3 ดวงคือแพ้ด่านนั้น ต้องเล่นใหม่</li>
+          <li><b>ด่าน 3:</b> ทายว่า Algorithm ไหนใช้ “ขั้นตอน” น้อยที่สุด 3 รอบ (1 ขั้นตอน = เปรียบเทียบ 1 ครั้ง หรือสลับ 1 ครั้ง) ถูกอย่างน้อย 2 รอบจึงผ่าน</li>
+          <li>แต่ละด่านเต็ม 100 คะแนน รวม 300 คะแนน ถ้าได้ 270 ขึ้นไปคือ Sort Master ถ้าได้ 230 ขึ้นไปคือ Sort Expert</li>
+          <li>คำตอบที่ถูกคือสิ่งที่ Algorithm นั้นทำจริงๆ เกมไม่ได้เก็บเฉลยไว้ล่วงหน้า แต่รันโค้ด Sorting ตรวจให้ทุกครั้ง</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ================= หน้าด่าน ================= -->
+    <section id="screen-mission" class="screen" hidden>
+      <div class="hud">
+        <div><span class="tag" id="mTag"></span><h2 id="mTitle"></h2></div>
+        <div class="hud-right">
+          <div class="lives" id="mLives" role="img"></div>
+          <div class="mscore" id="mScore"></div>
+        </div>
+      </div>
+
+      <details class="card learn" id="learnCard" open>
+        <summary>หลักการของ Algorithm นี้</summary>
+        <div id="learnBody"></div>
+      </details>
+
+      <div class="card stage" id="stage">
+        <p class="prompt" id="prompt"></p>
+        <div id="arenaHost"></div>
+        <p class="caption" id="caption" aria-live="polite"></p>
+        <div class="stats" id="stats"></div>
+        <div class="btnrow" id="controls"></div>
+      </div>
+
+      <div class="card race" id="raceBox" hidden></div>
+    </section>
+
+    <!-- ================= หน้าสรุปผล ================= -->
+    <section id="screen-result" class="screen" hidden></section>
+  </main>
+
+  <div id="overlay" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+    <div class="dialog card">
+      <h2 id="ovTitle"></h2>
+      <div id="ovBody"></div>
+      <div class="btnrow" id="ovBtns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   SORT MASTER — เกมฝึกเรียงลำดับ (CP241 · การบ้านสัปดาห์ที่ 10)
+
+   ภาพรวม: ไฟล์นี้มี 4 ส่วน
+     ส่วนที่ 1  SORTING ALGORITHMS  (Bubble / Selection / Insertion)  <-- หัวใจของเกม
+     ส่วนที่ 2  สร้างชุดข้อมูลของแต่ละด่าน
+     ส่วนที่ 3  วาดแท่งตัวเลข และตัวเดินขั้นตอนของ Algorithm
+     ส่วนที่ 4  ตัวเกม (3 ด่าน, หัวใจ, คะแนน, หน้าสรุปผล)
+
+   Sorting เป็นหัวใจของเกมอย่างไร
+     - ด่าน 1 และ 2 ใช้ Algorithm เป็น "กรรมการ": ผู้เล่นต้องตัดสินใจแทน Algorithm
+       แล้วเกมเทียบกับขั้นตอนที่ Algorithm ตัวจริงทำ ถ้าไม่ตรงถือว่าผิด
+     - ด่าน 3 รัน Algorithm ทั้ง 3 ตัวบนข้อมูลเดียวกัน นับขั้นตอนจริง แล้วเทียบกับคำทายของผู้เล่น
+   ===================================================================== */
+
+
+/* =====================================================================
+   ส่วนที่ 1 : SORTING ALGORITHMS
+   ---------------------------------------------------------------------
+   ทุก Algorithm เขียนเป็น generator (function*) ที่ "ส่ง event ออกมาทีละขั้น"
+   แทนที่จะเรียงทีเดียวจบ ทำให้เกมหยุดรอผู้เล่น/แสดงภาพทีละขั้นได้
+   ชนิดของ event:
+     { type:'compare', i, j }   เปรียบเทียบค่าที่ช่อง i กับช่อง j
+     { type:'swap',    i, j }   สลับค่าที่ช่อง i กับช่อง j
+     { type:'pick',    i, min } (Selection) เจอตัวเล็กสุดของรอบนี้แล้ว อยู่ช่อง min
+     { type:'sorted',  lo, hi } ช่อง lo..hi อยู่ตำแหน่งสุดท้ายถูกต้องแล้ว (สีเขียว)
+     { type:'zone',    hi }     (Insertion) ช่อง 0..hi เรียงกันเองแล้ว (สีม่วงอ่อน)
+   ===================================================================== */
+
+// ฟังก์ชันช่วย: สลับค่าสองช่องในอาร์เรย์
+function swapArr(a, i, j) { const t = a[i]; a[i] = a[j]; a[j] = t; }
+
+/* ---------------------------------------------------------------------
+   1) BUBBLE SORT
+   แนวคิด: เทียบ "คู่ที่อยู่ติดกัน" จากซ้ายไปขวา ถ้าตัวซ้ายมากกว่าตัวขวาให้สลับ
+           จบ 1 รอบ ตัวที่ใหญ่ที่สุดจะ "ลอย" ไปอยู่ท้ายแถว (เหมือนฟองอากาศ)
+           แล้วทำซ้ำกับส่วนที่เหลือ
+   Early exit: ถ้ารอบไหนไม่มีการสลับเลย แปลว่าเรียงเสร็จแล้ว หยุดได้ทันที
+   ความเร็ว:  เวลา O(n²) กรณีแย่สุด / O(n) ถ้าข้อมูลเรียงอยู่แล้ว (เพราะ early exit)
+              จำนวนครั้งที่สลับ = จำนวนคู่ที่เรียงผิดลำดับ (inversions)
+   --------------------------------------------------------------------- */
+function* bubbleSort(input) {
+  const a = input.slice();                     // ทำงานบนสำเนา ไม่แก้ข้อมูลเดิม
+  const n = a.length;
+  for (let pass = 0; pass < n - 1; pass++) {   // วนทีละ "รอบ"
+    let swapped = false;                       // จำว่ารอบนี้มีการสลับหรือไม่
+    for (let j = 0; j < n - 1 - pass; j++) {   // ช่วงท้ายที่เรียงแล้วไม่ต้องเทียบอีก
+      yield { type: 'compare', i: j, j: j + 1 };
+      if (a[j] > a[j + 1]) {                   // ตัวซ้ายมากกว่าตัวขวา = อยู่ผิดลำดับ
+        swapArr(a, j, j + 1);                  // สลับ
+        swapped = true;
+        yield { type: 'swap', i: j, j: j + 1 };
+      }
+    }
+    // จบรอบ: ช่องสุดท้ายของช่วงนี้คือตัวที่ใหญ่ที่สุด ตรึงตำแหน่งได้แล้ว
+    yield { type: 'sorted', lo: n - 1 - pass, hi: n - 1 - pass };
+    if (!swapped) {                            // รอบนี้ไม่มีการสลับเลย = เรียงเสร็จทั้งแถว
+      yield { type: 'sorted', lo: 0, hi: n - 2 - pass };
+      return;
+    }
+  }
+  yield { type: 'sorted', lo: 0, hi: 0 };      // เหลือช่องแรกช่องเดียว ถูกตำแหน่งอยู่แล้ว
+}
+
+/* ---------------------------------------------------------------------
+   2) SELECTION SORT
+   แนวคิด: ในส่วนที่ยังไม่เรียง ให้ "หาตัวเล็กที่สุด" แล้วสลับมาไว้ช่องหน้าสุดของส่วนนั้น
+           ช่องนั้นเป็นอันเรียบร้อย ทำซ้ำกับส่วนที่เหลือ
+   จุดเด่น:  สลับน้อยมาก ไม่เกิน n-1 ครั้ง (รอบละ 1 ครั้งอย่างมาก)
+   จุดด้อย:  ต้องสแกนหาตัวเล็กสุดทุกรอบ จึงเปรียบเทียบ n(n-1)/2 ครั้งเสมอ
+             แม้ข้อมูลจะเรียงมาแล้วก็ตาม => เวลา O(n²) ทุกกรณี
+   --------------------------------------------------------------------- */
+function* selectionSort(input) {
+  const a = input.slice();
+  const n = a.length;
+  for (let i = 0; i < n - 1; i++) {            // i = ช่องหน้าสุดของส่วนที่ยังไม่เรียง
+    let min = i;                               // สมมติว่าช่อง i เล็กสุดไปก่อน
+    for (let j = i + 1; j < n; j++) {          // สแกนส่วนที่เหลือ
+      yield { type: 'compare', i: min, j: j }; // เทียบ "ตัวเล็กสุดตอนนี้" กับช่อง j
+      if (a[j] < a[min]) min = j;              // เจอตัวที่เล็กกว่า จำตำแหน่งไว้
+    }
+    yield { type: 'pick', i: i, min: min };    // สแกนจบ: ตัวเล็กสุดของรอบนี้อยู่ช่อง min
+    if (min !== i) {                           // ถ้ามันอยู่ที่เดิมอยู่แล้วไม่ต้องสลับ
+      swapArr(a, i, min);
+      yield { type: 'swap', i: i, j: min };
+    }
+    yield { type: 'sorted', lo: i, hi: i };    // ช่อง i เรียบร้อย
+  }
+  yield { type: 'sorted', lo: n - 1, hi: n - 1 };
+}
+
+/* ---------------------------------------------------------------------
+   3) INSERTION SORT
+   แนวคิด: เหมือนจัดไพ่ในมือ ส่วนทางซ้ายเรียงกันเองเสมอ
+           หยิบตัวถัดไปมา แล้วเลื่อนมันไปทางซ้ายจนเจอตัวที่ "ไม่ใหญ่กว่า" แล้วหยุด
+           (เขียนแบบสลับทีละคู่ข้างกัน เพื่อให้นับ/แสดงภาพได้ตรงกับ Algorithm อื่น)
+   ความเร็ว:  เวลา O(n²) กรณีแย่สุด (ข้อมูลกลับด้าน)
+              เวลา O(n) ถ้าข้อมูลเกือบเรียงแล้ว เพราะแต่ละตัวเทียบ 1 ครั้งแล้วหยุด
+              จำนวนครั้งที่สลับ = จำนวนคู่ที่เรียงผิดลำดับ (inversions) เท่ากับ Bubble Sort
+   --------------------------------------------------------------------- */
+function* insertionSort(input) {
+  const a = input.slice();
+  const n = a.length;
+  for (let i = 1; i < n; i++) {                // ตัวที่ i คือ "ไพ่ใบใหม่" ที่จะแทรก
+    let j = i;
+    while (j > 0) {                            // เลื่อนไปทางซ้ายจนสุดแถวหรือเจอตัวที่ไม่ใหญ่กว่า
+      yield { type: 'compare', i: j - 1, j: j };
+      if (a[j - 1] > a[j]) {                   // ตัวทางซ้ายใหญ่กว่า = ต้องเลื่อนผ่านมันไป
+        swapArr(a, j - 1, j);
+        yield { type: 'swap', i: j - 1, j: j };
+        j--;
+      } else {
+        break;                                 // เจอที่ที่ถูกแล้ว หยุด
+      }
+    }
+    yield { type: 'zone', hi: i };             // ช่อง 0..i เรียงกันเองแล้ว
+  }
+  yield { type: 'sorted', lo: 0, hi: n - 1 };
+}
+
+const ALGOS = {
+  bubble:    { key: 'bubble',    name: 'Bubble Sort',    fn: bubbleSort },
+  selection: { key: 'selection', name: 'Selection Sort', fn: selectionSort },
+  insertion: { key: 'insertion', name: 'Insertion Sort', fn: insertionSort }
+};
+const KEYS = ['bubble', 'selection', 'insertion'];
+
+// นับ "ขั้นตอน" ของ Algorithm บนข้อมูลชุดหนึ่ง (1 ขั้นตอน = เปรียบเทียบ 1 ครั้ง หรือ สลับ 1 ครั้ง)
+function countSteps(key, vals) {
+  let comps = 0, swaps = 0;
+  for (const e of ALGOS[key].fn(vals)) {
+    if (e.type === 'compare') comps++;
+    else if (e.type === 'swap') swaps++;
+  }
+  return { comps: comps, swaps: swaps, total: comps + swaps };
+}
+
+// จำนวนคู่ที่เรียงผิดลำดับ (inversions) ใช้อธิบายว่าทำไม Bubble/Insertion สลับเท่านี้
+function countInversions(a) {
+  let c = 0;
+  for (let i = 0; i < a.length; i++)
+    for (let j = i + 1; j < a.length; j++)
+      if (a[i] > a[j]) c++;
+  return c;
+}
+
+
+/* =====================================================================
+   ส่วนที่ 2 : สร้างชุดข้อมูลของแต่ละด่าน
+   ===================================================================== */
+const MAXV = 9;                                // ค่าในเกมอยู่ระหว่าง 1..9 และไม่ซ้ำกัน
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) swapArr(arr, i, randInt(0, i)); return arr; }
+function pickDistinct(n) {
+  const pool = [];
+  for (let v = 1; v <= MAXV; v++) pool.push(v);
+  return shuffle(pool).slice(0, n);
+}
+
+// ด่าน 1-2: ตัวเลข n ตัว สุ่มให้ยุ่งพอสมควร (อย่างน้อย 5 คู่ผิดลำดับ)
+function makeRandomArray(n) {
+  let a;
+  do { a = pickDistinct(n); } while (countInversions(a) < 5);
+  return a;
+}
+
+// ด่าน 3: คำนวณต้นทุนจริงของทั้ง 3 Algorithm แล้วหาผู้ชนะ
+function costsOf(vals) { const c = {}; KEYS.forEach(k => { c[k] = countSteps(k, vals); }); return c; }
+function winnersOf(c) {
+  const best = Math.min.apply(null, KEYS.map(k => c[k].total));
+  return { best: best, winners: KEYS.filter(k => c[k].total === best) };
+}
+function marginOK(c) {                         // ผู้ชนะต้องชนะอันดับสองอย่างน้อย 3 ขั้นตอน (คำถามจะได้ไม่กำกวม)
+  const t = KEYS.map(k => c[k].total).sort((x, y) => x - y);
+  return t[1] - t[0] >= 3;
+}
+function makeNearlySorted() {                  // เรียงอยู่แล้ว แต่สลับคู่ข้างกัน 1-2 จุด
+  for (let tries = 0; tries < 300; tries++) {
+    const base = pickDistinct(8).sort((a, b) => a - b);
+    const p1 = randInt(0, 6), p2 = randInt(0, 6);
+    swapArr(base, p1, p1 + 1);
+    if (Math.random() < 0.5 && Math.abs(p2 - p1) >= 2) swapArr(base, p2, p2 + 1);
+    const c = costsOf(base), w = winnersOf(c);
+    if (w.winners.length === 1 && w.winners[0] === 'insertion' && marginOK(c)) return base;
+  }
+  return [1, 2, 4, 3, 5, 6, 7, 8];
+}
+function makeReversed() { return pickDistinct(8).sort((a, b) => b - a); }   // เรียงกลับด้านทั้งแถว
+function makeRandomChallenge() {               // สุ่มจริงๆ แต่ต้องมีผู้ชนะชัดเจน
+  for (let tries = 0; tries < 500; tries++) {
+    const a = pickDistinct(8);
+    const c = costsOf(a), w = winnersOf(c);
+    if (w.winners.length === 1 && marginOK(c) && countInversions(a) >= 8) return a;
+  }
+  return [6, 3, 8, 1, 7, 2, 5, 4];
+}
+const DEMO = [4, 2, 5, 1, 3];                  // ตัวอย่างสำหรับปุ่ม "ดูสาธิต"
+
+
+/* =====================================================================
+   ส่วนที่ 3 : วาดแท่งตัวเลข และตัวเดินขั้นตอนของ Algorithm
+   ===================================================================== */
+const $ = (s) => document.querySelector(s);
+
+// สร้างกระดานแท่ง: แท่งแต่ละแท่งเป็น element เดิมตลอด ตอนสลับจะเปลี่ยนแค่ตำแหน่ง (--pos)
+// CSS จึงเลื่อนแท่งให้เห็นเป็นภาพเคลื่อนไหวนุ่มๆ
+function createArena(host, vals, opts) {
+  opts = opts || {};
+  const n = vals.length;
+  host.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'arena-wrap' + (opts.mini ? ' mini' : '');
+  const stage = document.createElement('div');
+  stage.className = 'arena';
+  stage.style.setProperty('--n', n);
+  const items = vals.map(v => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.dataset.v = v;
+    if (opts.interactive) {
+      bar.tabIndex = 0;
+      bar.setAttribute('role', 'button');
+      bar.setAttribute('aria-label', 'แท่งเลข ' + v);
+    }
+    const fill = document.createElement('div');
+    fill.className = 'fill';
+    fill.style.height = (16 + v / MAXV * 84) + '%';
+    const lab = document.createElement('span');
+    lab.textContent = v;
+    fill.appendChild(lab);
+    bar.appendChild(fill);
+    stage.appendChild(bar);
+    return { v: v, el: bar };
+  });
+  wrap.appendChild(stage);
+  let slots = null;
+  if (!opts.mini && opts.slots !== false) {    // แถวเลขช่อง 1..n ใต้แท่ง
+    slots = document.createElement('div');
+    slots.className = 'slots';
+    slots.style.setProperty('--n', n);
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      s.innerHTML = '<small>ช่อง </small>' + (i + 1);
+      slots.appendChild(s);
+    }
+    wrap.appendChild(slots);
+  }
+  host.appendChild(wrap);
+  const arena = { items: items, stage: stage, slots: slots, n: n };
+  layoutArena(arena);
+  return arena;
+}
+function layoutArena(a) {                      // บอกแต่ละแท่งว่าตอนนี้อยู่ช่องที่เท่าไร
+  a.items.forEach((it, pos) => { it.el.style.setProperty('--pos', pos); it.el.dataset.pos = pos; });
+}
+function swapItems(a, i, j) {                  // สลับแท่งสองช่อง (ภาพเลื่อนเอง ด้วย CSS transition)
+  const t = a.items[i]; a.items[i] = a.items[j]; a.items[j] = t;
+  layoutArena(a);
+}
+function addMark(a, pos, cls) { a.items[pos].el.classList.add(cls); }
+function clearMarks(a, classes) { a.items.forEach(it => classes.forEach(c => it.el.classList.remove(c))); }
+function highlightSlot(a, pos) {
+  if (!a.slots) return;
+  Array.prototype.forEach.call(a.slots.children, (s, k) => s.classList.toggle('on', k === pos));
+}
+// event ที่เป็นแค่ "ป้ายสี" (ไม่นับเป็นขั้นตอน): sorted / zone / pick
+function applyMarker(a, e) {
+  if (e.type === 'sorted') {
+    for (let p = e.lo; p <= e.hi; p++) { addMark(a, p, 'done'); a.items[p].el.classList.remove('zone'); }
+  } else if (e.type === 'zone') {
+    for (let p = 0; p <= e.hi; p++) addMark(a, p, 'zone');
+  } else if (e.type === 'pick') {
+    clearMarks(a, ['sel', 'cmp']);
+    addMark(a, e.min, 'sel');
+  }
+}
+
+// "ตัวเดิน" 1 ตัวต่อ 1 Algorithm: เก็บ event ทั้งหมดไว้แล้วเดินทีละขั้นตอน
+// ใช้ทั้งตอนสาธิต, ตอนแข่งในด่าน 3 และภาพเคลื่อนไหวบนหน้าแรก
+function makeTrack(key, vals, arena) {
+  return { key: key, events: Array.from(ALGOS[key].fn(vals)), k: 0, comps: 0, swaps: 0, arena: arena, done: false };
+}
+const isStep = (e) => e.type === 'compare' || e.type === 'swap';
+
+function describeCompare(t, e) {
+  const v = (p) => t.arena.items[p].v;
+  const x = v(e.i), y = v(e.j);
+  if (t.key === 'selection')
+    return y < x ? 'เทียบ ' + x + ' กับ ' + y + ' → ' + y + ' เล็กกว่า จึงจำ ' + y + ' เป็นตัวเล็กสุดใหม่'
+                 : 'เทียบ ' + x + ' กับ ' + y + ' → ' + x + ' ยังเล็กสุดอยู่';
+  if (t.key === 'insertion')
+    return x > y ? 'เทียบ ' + y + ' กับตัวทางซ้าย ' + x + ' → ' + x + ' ใหญ่กว่า ต้องเลื่อน ' + y + ' ไปทางซ้าย'
+                 : 'เทียบ ' + y + ' กับตัวทางซ้าย ' + x + ' → ' + x + ' ไม่ใหญ่กว่า หยุด ' + y + ' อยู่ถูกที่แล้ว';
+  return x > y ? 'เทียบ ' + x + ' กับ ' + y + ' → ' + x + ' มากกว่า ต้องสลับ'
+               : 'เทียบ ' + x + ' กับ ' + y + ' → อยู่ถูกลำดับแล้ว ไม่ต้องสลับ';
+}
+function describeSwap(t, e) {
+  const v = (p) => t.arena.items[p].v;
+  if (t.key === 'selection') return 'สลับ ' + v(e.j) + ' (ตัวเล็กสุด) ไปไว้ช่องหน้า แทนที่ ' + v(e.i);
+  if (t.key === 'insertion') return 'เลื่อน ' + v(e.j) + ' ไปทางซ้าย (สลับกับ ' + v(e.i) + ')';
+  return 'สลับ ' + v(e.i) + ' กับ ' + v(e.j);
+}
+
+// เดินหน้า 1 "ขั้นตอน" (compare หรือ swap อย่างใดอย่างหนึ่ง) แล้วคืนข้อความอธิบาย
+function stepTrack(t) {
+  if (t.done) return '';
+  clearMarks(t.arena, ['cmp', 'swp', 'sel']);
+  let text = '', consumed = false;
+  while (t.k < t.events.length) {
+    const e = t.events[t.k];
+    if (isStep(e)) {
+      if (consumed) break;                     // ขั้นตอนถัดไปรอรอบหน้า
+      consumed = true; t.k++;
+      if (e.type === 'compare') {
+        t.comps++;
+        text = describeCompare(t, e);
+        if (t.key === 'selection') { addMark(t.arena, e.i, 'sel'); addMark(t.arena, e.j, 'cmp'); }
+        else { addMark(t.arena, e.i, 'cmp'); addMark(t.arena, e.j, 'cmp'); }
+      } else {
+        t.swaps++;
+        text = describeSwap(t, e);
+        swapItems(t.arena, e.i, e.j);
+        addMark(t.arena, e.i, 'swp'); addMark(t.arena, e.j, 'swp');
+      }
+    } else {
+      t.k++;
+      applyMarker(t.arena, e);
+      if (e.type === 'pick') text += ' → ตัวเล็กสุดรอบนี้คือ ' + t.arena.items[e.min].v;
+    }
+  }
+  if (t.k >= t.events.length) {                // จบแล้ว: ล้างสีชั่วคราว ให้เหลือสีเขียว "เรียงเสร็จ" ทั้งแถว
+    t.done = true;
+    clearMarks(t.arena, ['cmp', 'swp', 'sel']);
+  }
+  return text;
+}
+
+
+/* =====================================================================
+   ส่วนที่ 4 : ตัวเกม
+   ===================================================================== */
+const state = { scores: [null, null, null] };  // คะแนนดีที่สุดของแต่ละด่าน (null = ยังไม่ผ่าน)
+let cur = null;                                // สถานะของด่านที่กำลังเล่น
+let heroTimer = null;
+
+const MISSIONS = [
+  {
+    key: 'bubble', demoKey: 'bubble', tag: 'Bubble Sort', title: 'ด่าน 1 · เป็น Bubble Sort',
+    desc: 'เทียบคู่ข้างกัน แล้วตัดสินใจว่าจะสลับหรือไม่',
+    learnPrompt: 'กด “ดูสาธิต” เพื่อดู Bubble Sort ทำงานกับตัวอย่าง 4 2 5 1 3 แล้วกด “เริ่มด่าน” เมื่อพร้อม',
+    learn: '<p>เรียงจากน้อยไปมาก โดยเทียบเฉพาะ <b>คู่ที่อยู่ติดกัน</b></p>' +
+      '<ol><li>เริ่มที่ช่องซ้ายสุด เทียบตัวซ้ายกับตัวขวา</li>' +
+      '<li>ถ้า <b>ตัวซ้าย &gt; ตัวขวา</b> ให้สลับ ถ้าไม่ใช่ก็ไม่ต้องทำอะไร</li>' +
+      '<li>ขยับไปคู่ถัดไปจนสุดแถว นับเป็น 1 รอบ ตัวที่ใหญ่ที่สุดจะลอยไปอยู่ท้ายแถว (สีเขียว)</li>' +
+      '<li>ทำซ้ำกับส่วนที่เหลือ ถ้ารอบไหนไม่มีการสลับเลย แปลว่าเรียงเสร็จแล้ว</li></ol>' +
+      '<p class="note">ความเร็ว: เทียบราว n(n−1)/2 ครั้ง (O(n²)) แต่ถ้าข้อมูลเรียงอยู่แล้วจะหยุดได้เร็วมาก (O(n))</p>' +
+      '<div class="legend"><span><i style="background:var(--cmp)"></i>กำลังเทียบ</span><span><i style="background:var(--swp)"></i>เพิ่งสลับ</span><span><i style="background:var(--done)"></i>เรียงเสร็จแล้ว</span></div>'
+  },
+  {
+    key: 'selection', demoKey: 'selection', tag: 'Selection Sort', title: 'ด่าน 2 · เป็น Selection Sort',
+    desc: 'หาตัวเล็กที่สุด แล้วส่งไปไว้ช่องหน้า',
+    learnPrompt: 'กด “ดูสาธิต” เพื่อดู Selection Sort ทำงานกับตัวอย่าง 4 2 5 1 3 แล้วกด “เริ่มด่าน” เมื่อพร้อม',
+    learn: '<p>เรียงจากน้อยไปมาก โดย <b>เลือกตัวเล็กที่สุด</b> ของส่วนที่ยังไม่เรียงมาไว้ข้างหน้า</p>' +
+      '<ol><li>มองส่วนที่ยังไม่เรียง (แท่งสีปกติ) แล้วหาตัวที่เล็กที่สุด</li>' +
+      '<li>สลับตัวนั้นไปไว้ช่องหน้าสุดของส่วนนี้ (ถ้าอยู่ที่เดิมอยู่แล้วก็ไม่ต้องสลับ)</li>' +
+      '<li>ช่องนั้นเรียบร้อย (สีเขียว) ทำซ้ำกับส่วนที่เหลือ</li></ol>' +
+      '<p class="note">จุดเด่น: สลับน้อยมาก ไม่เกิน n−1 ครั้ง แต่ต้องสแกนหาตัวเล็กสุดทุกรอบ จึงเทียบ n(n−1)/2 ครั้งเสมอ (O(n²))</p>' +
+      '<div class="legend"><span><i style="background:var(--sel)"></i>ตัวเล็กสุดที่เจอ</span><span><i style="background:var(--cmp)"></i>กำลังเทียบ</span><span><i style="background:var(--done)"></i>เรียงเสร็จแล้ว</span></div>'
+  },
+  {
+    key: 'detective', demoKey: 'insertion', tag: 'Insertion Sort + แข่งจริง', title: 'ด่าน 3 · นักสืบ Algorithm',
+    desc: 'ทายว่าใครใช้ขั้นตอนน้อยที่สุด แล้วดูแข่งกันจริง',
+    learnPrompt: 'ด่านนี้มี Algorithm ตัวที่ 3 คือ Insertion Sort กด “ดูสาธิต” เพื่อดูวิธีทำงาน แล้วกด “เริ่มด่าน”',
+    learn: '<p><b>Insertion Sort</b> เหมือนจัดไพ่ในมือ ส่วนทางซ้ายเรียงกันเองเสมอ (สีม่วงอ่อน)</p>' +
+      '<ol><li>หยิบแท่งถัดไปมา แล้วเทียบกับตัวทางซ้าย</li>' +
+      '<li>ถ้าตัวทางซ้ายใหญ่กว่า ให้เลื่อนไปทางซ้ายต่อ ถ้าไม่ใหญ่กว่าให้หยุด</li>' +
+      '<li>ทำซ้ำกับแท่งถัดไปจนหมดแถว</li></ol>' +
+      '<p><b>วิธีนับคะแนนความเร็ว:</b> 1 ขั้นตอน = เปรียบเทียบ 1 ครั้ง หรือสลับ 1 ครั้ง ใครรวมน้อยกว่าคือเร็วกว่า</p>' +
+      '<p class="note">ตัวช่วยคิด: Bubble และ Insertion สลับเท่ากับจำนวนคู่ที่เรียงผิดลำดับ · Selection สลับน้อยแต่เทียบครบทุกคู่เสมอ · Insertion เร็วมากเมื่อข้อมูลเกือบเรียงแล้ว</p>'
+  }
+];
+
+const ROUNDS = [
+  { kind: 'nearly',   label: 'เกือบเรียงแล้ว',  make: makeNearlySorted },
+  { kind: 'reversed', label: 'เรียงกลับด้าน',   make: makeReversed },
+  { kind: 'random',   label: 'สุ่มยุ่งๆ',        make: makeRandomChallenge }
+];
+
+/* ---------- ตัวช่วยจัดการหน้าจอ ---------- */
+function stopTimer() { if (cur && cur.timer) { clearInterval(cur.timer); cur.timer = null; } }
+function stopHero() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
+function setPrompt(html) { $('#prompt').innerHTML = html; }
+function setCaption(text, kind) { const c = $('#caption'); c.textContent = text || ''; c.className = 'caption' + (kind ? ' ' + kind : ''); }
+function setStats(list) {
+  $('#stats').innerHTML = list.map(p => '<span class="chip">' + p[0] + ' <b>' + p[1] + '</b></span>').join('');
+}
+function setControls(list) {
+  const box = $('#controls');
+  box.innerHTML = '';
+  list.forEach(b => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn ' + (b.cls || '');
+    btn.textContent = b.text;
+    if (b.id) btn.id = b.id;
+    if (b.disabled) btn.disabled = true;
+    btn.addEventListener('click', b.fn);
+    box.appendChild(btn);
+  });
+}
+function totalScore() { return state.scores.reduce((s, v) => s + (v || 0), 0); }
+function renderTotal() { $('#totalScore').textContent = totalScore(); }
+function allPassed() { return state.scores.every(s => s !== null); }
+function shake() { const s = $('#stage'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); }
+
+function showOverlay(title, bodyHtml, buttons) {
+  $('#ovTitle').textContent = title;
+  $('#ovBody').innerHTML = bodyHtml;
+  const box = $('#ovBtns');
+  box.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn ' + (b.cls || '');
+    btn.textContent = b.text;
+    btn.addEventListener('click', b.fn);
+    box.appendChild(btn);
+  });
+  $('#overlay').hidden = false;
+  if (box.firstChild) box.firstChild.focus();
+}
+function hideOverlay() { $('#overlay').hidden = true; }
+
+function show(name) {
+  stopTimer(); stopHero();
+  ['home', 'mission', 'result'].forEach(s => { $('#screen-' + s).hidden = (s !== name); });
+  if (name === 'home') { renderHome(); startHero(); }
+  try { window.scrollTo(0, 0); } catch (err) { /* ไม่เป็นไร */ }
+}
+
+/* ---------- หน้าแรก ---------- */
+function renderHome() {
+  renderTotal();
+  $('#missionList').innerHTML = '';
+  MISSIONS.forEach((M, i) => {
+    const li = document.createElement('li');
+    const s = state.scores[i];
+    li.innerHTML = '<button type="button" class="mrow' + (s !== null ? ' passed' : '') + '" id="mission-' + i + '">' +
+      '<span class="mno">' + (i + 1) + '</span>' +
+      '<span class="mtext"><b>' + M.title.split('· ')[1] + '</b><small>' + M.desc + '</small></span>' +
+      '<span class="mstate">' + (s !== null ? 'ผ่านแล้ว ' + s + '/100' : 'ยังไม่ผ่าน') + '</span></button>';
+    li.firstChild.addEventListener('click', () => enterMission(i));
+    $('#missionList').appendChild(li);
+  });
+  $('#btnResult').hidden = !allPassed();
+  $('#btnStart').textContent = allPassed() ? 'เล่นซ้ำ ▶' : (state.scores.some(s => s !== null) ? 'เล่นต่อ ▶' : 'เริ่มเล่น ▶');
+}
+
+// ภาพเคลื่อนไหวหน้าแรก: Insertion Sort ทำงานจริงให้ดู แล้วสุ่มชุดใหม่วนไปเรื่อยๆ
+function startHero() {
+  stopHero();
+  const host = $('#heroArena');
+  if (!host) return;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let arena, track, wait = 0;
+  const fresh = () => {
+    let v;
+    do { v = pickDistinct(7); } while (countInversions(v) < 8);
+    arena = createArena(host, v, { slots: false });
+    track = makeTrack('insertion', v, arena);
+  };
+  fresh();
+  if (reduce) { while (!track.done) stepTrack(track); return; }
+  heroTimer = setInterval(() => {
+    if (wait > 0) { wait--; if (wait === 0) fresh(); return; }
+    stepTrack(track);
+    if (track.done) wait = 9;
+  }, 330);
+}
+
+/* ---------- เข้าด่าน ---------- */
+function enterMission(i, skipLearn) {
+  stopTimer(); hideOverlay();
+  const M = MISSIONS[i];
+  cur = { i: i, key: M.key, phase: 'learn', lives: 3, mistakes: 0, comps: 0, swaps: 0, correct: 0, timer: null };
+  show('mission');
+  $('#mTag').textContent = M.tag;
+  $('#mTitle').textContent = M.title;
+  $('#learnBody').innerHTML = M.learn;
+  $('#raceBox').hidden = true;
+  $('#raceBox').innerHTML = '';
+  renderHud();
+  if (skipLearn) { startPlay(); return; }
+  $('#learnCard').open = true;
+  createArena($('#arenaHost'), DEMO, {});
+  setPrompt(M.learnPrompt);
+  setCaption('');
+  setStats([]);
+  setControls([
+    { id: 'btnDemo', text: '▶ ดูสาธิต', fn: runDemo },
+    { id: 'btnPlay', text: 'เริ่มด่าน →', cls: 'primary', fn: startPlay }
+  ]);
+}
+
+// สาธิต: ให้ Algorithm ตัวจริงทำงานบนข้อมูลตัวอย่าง พร้อมคำอธิบายทุกขั้น
+function runDemo() {
+  stopTimer();
+  const arena = createArena($('#arenaHost'), DEMO, {});
+  const t = makeTrack(MISSIONS[cur.i].demoKey, DEMO, arena);
+  const btn = $('#btnDemo');
+  btn.disabled = true; btn.textContent = 'กำลังสาธิต…';
+  setCaption('เริ่มสาธิต');
+  cur.timer = setInterval(() => {
+    setCaption(stepTrack(t));
+    setStats([['เทียบ', t.comps], ['สลับ', t.swaps]]);
+    if (t.done) {
+      stopTimer();
+      setCaption('สาธิตเสร็จ แท่งเรียงครบแล้ว (สีเขียวทั้งแถว) ถ้าพร้อมแล้วกด “เริ่มด่าน”', 'ok');
+      const b = $('#btnDemo');
+      if (b) { b.disabled = false; b.textContent = '▶ ดูอีกครั้ง'; }
+    }
+  }, 650);
+}
+
+function startPlay() {
+  stopTimer(); hideOverlay();
+  cur.phase = 'play'; cur.lives = 3; cur.mistakes = 0; cur.comps = 0; cur.swaps = 0; cur.correct = 0;
+  $('#learnCard').open = false;
+  $('#raceBox').hidden = true;
+  renderHud();
+  setCaption('');
+  ({ bubble: startBubble, selection: startSelection, detective: startDetective })[cur.key]();
+}
+
+function renderHud() {
+  const lives = $('#mLives'), sc = $('#mScore');
+  if (cur.key === 'detective') {
+    lives.hidden = true;
+    sc.textContent = cur.phase === 'play' ? 'ทายถูก ' + cur.correct + '/3' : '';
+  } else {
+    lives.hidden = false;
+    lives.textContent = [0, 1, 2].map(k => (k < cur.lives ? '♥' : '♡')).join(' ');
+    lives.setAttribute('aria-label', 'หัวใจเหลือ ' + cur.lives + ' ดวง');
+    sc.textContent = cur.phase === 'play' ? 'คะแนนด่านนี้ ' + Math.max(0, 100 - 20 * cur.mistakes) + '/100' : '';
+  }
+}
+
+// ตอบผิด: เสียหัวใจ 1 ดวง ถ้าหมดแพ้ด่าน
+function mistake() {
+  cur.lives--; cur.mistakes++;
+  renderHud(); shake();
+  if (cur.lives <= 0) lose('ตอบผิดครบ 3 ครั้ง');
+}
+function lose(reason, title) {
+  cur.phase = 'over';
+  stopTimer();
+  setControls([]);
+  showOverlay(title || 'หัวใจหมดแล้ว', '<p>' + reason + '</p><p>ไม่เป็นไร กดลองใหม่ได้เลย ชุดตัวเลขจะถูกสุ่มใหม่</p>', [
+    { text: 'ลองใหม่', cls: 'primary', fn: () => enterMission(cur.i, true) },
+    { text: 'ดูหลักการอีกครั้ง', fn: () => enterMission(cur.i) },
+    { text: 'หน้าแรก', fn: () => show('home') }
+  ]);
+}
+function nextUnpassed(from) {
+  for (let k = 1; k <= 3; k++) { const idx = (from + k) % 3; if (state.scores[idx] === null) return idx; }
+  return -1;
+}
+function finishMission(score, bodyHtml) {
+  cur.phase = 'won';
+  stopTimer();
+  setControls([]);
+  state.scores[cur.i] = Math.max(state.scores[cur.i] || 0, score);
+  renderTotal(); renderHud();
+  const nxt = nextUnpassed(cur.i);
+  const btns = [];
+  if (nxt >= 0) btns.push({ text: 'ด่านถัดไป →', cls: 'primary', fn: () => enterMission(nxt) });
+  else btns.push({ text: 'ดูผลรวม →', cls: 'primary', fn: showResult });
+  btns.push({ text: 'เล่นด่านนี้ซ้ำ', fn: () => enterMission(cur.i, true) });
+  btns.push({ text: 'หน้าแรก', fn: () => show('home') });
+  showOverlay('ผ่านด่านแล้ว!', bodyHtml, btns);
+}
+function winSimple() {                          // ด่าน 1 และ 2
+  const score = Math.max(0, 100 - 20 * cur.mistakes);
+  let extra;
+  if (cur.key === 'bubble')
+    extra = '<p>ชุดตัวเลขนี้มีคู่ที่เรียงผิดลำดับ <b>' + countInversions(cur.initial) + '</b> คู่ และคุณสลับไป <b>' + cur.swaps +
+      '</b> ครั้ง เท่ากันพอดี เพราะการสลับแต่ละครั้งของ Bubble Sort แก้คู่ผิดลำดับได้ทีละ 1 คู่</p>';
+  else
+    extra = '<p>Selection Sort สลับได้ไม่เกิน n−1 = <b>' + (cur.n - 1) + '</b> ครั้ง คุณสลับไป <b>' + cur.swaps +
+      '</b> ครั้ง (ถ้าตัวเล็กสุดอยู่ที่เดิมอยู่แล้วก็ไม่ต้องสลับ)</p>';
+  finishMission(score, '<p>คะแนน <b>' + score + '</b>/100 · ตอบผิด ' + cur.mistakes + ' ครั้ง</p>' + extra);
+}
+
+
+/* ---------- ด่าน 1: เป็น Bubble Sort ----------
+   ผู้เล่นตัดสินใจ "สลับ / ไม่สลับ" ทีละคู่ แล้วเกมเทียบกับ event ของ bubbleSort() ตัวจริง
+   ถ้า event ถัดจาก compare คือ swap แปลว่าคำตอบที่ถูกคือ "สลับ" */
+function startBubble() {
+  const vals = makeRandomArray(6);
+  cur.initial = vals.slice();
+  cur.arena = createArena($('#arenaHost'), vals, {});
+  cur.events = Array.from(bubbleSort(vals));    // ขั้นตอนจริงของ Algorithm (ใช้เป็นเฉลย)
+  cur.k = 0;
+  setStats([['เทียบ', 0], ['สลับ', 0]]);
+  setControls([
+    { id: 'btnSwap', text: '⇄ สลับ', cls: 'primary grow', fn: () => bubbleAnswer(true) },
+    { id: 'btnKeep', text: 'ไม่สลับ →', cls: 'grow', fn: () => bubbleAnswer(false) }
+  ]);
+  bubbleNext();
+}
+function bubbleNext() {
+  const a = cur.arena;
+  clearMarks(a, ['cmp']);
+  // ข้าม event ที่ไม่ต้องถามผู้เล่น (ป้ายสีเขียว "เรียงแล้ว") จนเจอ compare ถัดไป
+  while (cur.k < cur.events.length && cur.events[cur.k].type !== 'compare') {
+    applyMarker(a, cur.events[cur.k]); cur.k++;
+  }
+  if (cur.k >= cur.events.length) { winSimple(); return; }
+  const e = cur.events[cur.k];
+  const nx = cur.events[cur.k + 1];
+  cur.expectSwap = !!(nx && nx.type === 'swap'); // เฉลยจากขั้นตอนจริงของ Algorithm
+  addMark(a, e.i, 'cmp'); addMark(a, e.j, 'cmp');
+  setPrompt('คู่นี้: <b>' + a.items[e.i].v + '</b> (ซ้าย) กับ <b>' + a.items[e.j].v + '</b> (ขวา) ต้องสลับไหม?');
+}
+function bubbleAnswer(wantSwap) {
+  if (!cur || cur.phase !== 'play' || cur.key !== 'bubble') return;
+  const a = cur.arena, e = cur.events[cur.k];
+  const L = a.items[e.i].v, R = a.items[e.j].v;
+  if (wantSwap === cur.expectSwap) {
+    cur.comps++;
+    if (wantSwap) {
+      swapItems(a, e.i, e.j); cur.swaps++; cur.k += 2;   // ข้ามทั้ง compare และ swap
+      setCaption('ถูก! ' + L + ' > ' + R + ' จึงสลับ', 'ok');
+    } else {
+      cur.k += 1;
+      setCaption('ถูก! ' + L + ' < ' + R + ' อยู่ถูกลำดับแล้ว', 'ok');
+    }
+    setStats([['เทียบ', cur.comps], ['สลับ', cur.swaps]]);
+    bubbleNext();
+  } else {
+    setCaption(wantSwap ? 'ยังไม่ต้องสลับ: ' + L + ' ไม่ได้มากกว่า ' + R + ' (ตัวซ้ายต้องมากกว่าจึงสลับ)'
+                        : 'ต้องสลับ: ' + L + ' มากกว่า ' + R + ' ตัวใหญ่ต้องไปอยู่ทางขวา', 'bad');
+    mistake();
+  }
+}
+
+
+/* ---------- ด่าน 2: เป็น Selection Sort ----------
+   ผู้เล่นคลิกแท่งที่เล็กที่สุดของส่วนที่ยังไม่เรียง เกมเทียบกับ event 'pick' ของ selectionSort() ตัวจริง */
+function startSelection() {
+  const vals = makeRandomArray(6);
+  cur.n = vals.length;
+  cur.arena = createArena($('#arenaHost'), vals, { interactive: true });
+  cur.arena.stage.classList.add('clickable');
+  cur.events = Array.from(selectionSort(vals));
+  cur.k = 0;
+  setStats([['รอบ', '1/' + (cur.n - 1)], ['สลับ', 0]]);
+  setControls([]);                              // ด่านนี้เล่นด้วยการคลิกที่แท่งโดยตรง
+  selectionNext();
+}
+function selectionNext() {
+  const a = cur.arena;
+  clearMarks(a, ['target', 'cmp']);
+  // ข้าม compare (ผู้เล่นเป็นคนสแกนเอง) และติดป้ายสีเขียวให้ช่องที่เรียบร้อย จนเจอ 'pick' ถัดไป
+  while (cur.k < cur.events.length && cur.events[cur.k].type !== 'pick') {
+    const e = cur.events[cur.k];
+    if (e.type === 'sorted') applyMarker(a, e);
+    cur.k++;
+  }
+  if (cur.k >= cur.events.length) { highlightSlot(a, -1); winSimple(); return; }
+  const e = cur.events[cur.k];
+  cur.target = e.i;                             // ช่องที่ตัวเล็กสุดต้องไปอยู่
+  cur.answerPos = e.min;                        // เฉลยจากขั้นตอนจริงของ Algorithm
+  addMark(a, e.i, 'target'); highlightSlot(a, e.i);
+  setStats([['รอบ', (e.i + 1) + '/' + (cur.n - 1)], ['สลับ', cur.swaps]]);
+  setPrompt('รอบที่ ' + (e.i + 1) + ': คลิก <b>แท่งที่เล็กที่สุด</b> ในส่วนที่ยังไม่เรียง (ช่อง ' + (e.i + 1) + ' ถึง ' + a.n + ')');
+}
+function selectionAnswer(pos) {
+  if (!cur || cur.phase !== 'play' || cur.key !== 'selection') return;
+  if (pos < cur.target) { setCaption('ช่องสีเขียวเรียงเสร็จแล้ว เลือกจากส่วนที่ยังไม่เรียงเท่านั้น (ไม่เสียหัวใจ)'); return; }
+  const a = cur.arena;
+  const clicked = a.items[pos].v;
+  if (pos === cur.answerPos) {
+    const e = cur.events[cur.k];
+    cur.k++;                                    // ข้าม event 'pick'
+    if (e.min !== e.i) {
+      swapItems(a, e.i, e.min); cur.swaps++; cur.k++;      // ข้าม event 'swap'
+      setCaption('ถูก! ตัวเล็กสุดคือ ' + clicked + ' สลับไปไว้ช่อง ' + (e.i + 1), 'ok');
+    } else {
+      setCaption('ถูก! ' + clicked + ' เล็กสุดและอยู่ช่อง ' + (e.i + 1) + ' อยู่แล้ว ไม่ต้องสลับ', 'ok');
+    }
+    selectionNext();
+  } else {
+    setCaption('แท่ง ' + clicked + ' ยังไม่ใช่ตัวเล็กสุด ยังมีตัวที่เล็กกว่าอยู่ในส่วนที่ยังไม่เรียง ลองมองใหม่อีกครั้ง', 'bad');
+    mistake();
+  }
+}
+$('#arenaHost').addEventListener('click', (ev) => {
+  const bar = ev.target.closest('.bar');
+  if (bar && cur && cur.key === 'selection') selectionAnswer(+bar.dataset.pos);
+});
+$('#arenaHost').addEventListener('keydown', (ev) => {
+  if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList && ev.target.classList.contains('bar')) {
+    ev.preventDefault(); ev.target.click();
+  }
+});
+
+
+/* ---------- ด่าน 3: นักสืบ Algorithm ----------
+   ผู้เล่นทายว่า Algorithm ไหนใช้ขั้นตอนน้อยที่สุด แล้วเกมรันทั้ง 3 Algorithm แข่งกันจริง
+   (1 ขั้นตอน = เปรียบเทียบ 1 ครั้ง หรือสลับ 1 ครั้ง) */
+function startDetective() {
+  cur.round = 0; cur.points = 0; cur.results = [];
+  detectiveRound();
+}
+function detectiveRound() {
+  const R = ROUNDS[cur.round];
+  cur.data = R.make();
+  cur.busy = false;
+  cur.arena = createArena($('#arenaHost'), cur.data, {});
+  $('#raceBox').hidden = true;
+  $('#raceBox').innerHTML = '';
+  setPrompt('รอบ ' + (cur.round + 1) + '/3: ข้อมูลชุดนี้ Algorithm ไหนใช้ <b>ขั้นตอนน้อยที่สุด</b> (เทียบ + สลับ)?');
+  setCaption('ลองสังเกตว่าข้อมูลเกือบเรียงอยู่แล้วหรือเปล่า หรือเรียงกลับด้าน แล้วเลือกคำตอบ');
+  setStats([['ทายถูก', cur.correct + '/' + cur.round]]);
+  renderHud();
+  setControls(KEYS.map(k => ({ id: 'guess-' + k, text: ALGOS[k].name, cls: 'grow', fn: () => detectiveGuess(k) })));
+}
+function detectiveGuess(chosen) {
+  if (cur.busy) return;
+  cur.busy = true;
+  const R = ROUNDS[cur.round];
+  const costs = costsOf(cur.data);              // รันทั้ง 3 Algorithm นับขั้นตอนจริง
+  const win = winnersOf(costs);
+  const ok = win.winners.indexOf(chosen) >= 0;
+
+  // สร้างแถวแข่ง: แต่ละ Algorithm มีกระดานเล็กของตัวเอง
+  const box = $('#raceBox');
+  box.hidden = false;
+  box.innerHTML = '<h3>ผลแข่งจริง: Algorithm ทั้ง 3 ทำงานบนข้อมูลชุดเดียวกัน</h3>';
+  const tracks = KEYS.map(k => {
+    const row = document.createElement('div');
+    row.className = 'race-row';
+    row.id = 'row-' + k;
+    row.innerHTML = '<div><div class="race-name">' + ALGOS[k].name + (k === chosen ? '<span class="pick">คุณเลือก</span>' : '') +
+      '</div><div class="race-count" id="cnt-' + k + '"><b>0</b> ขั้นตอน</div></div><div class="race-arena"></div>';
+    box.appendChild(row);
+    return makeTrack(k, cur.data, createArena(row.querySelector('.race-arena'), cur.data, { mini: true }));
+  });
+  const verdict = document.createElement('div');
+  verdict.className = 'verdict'; verdict.id = 'verdict'; verdict.hidden = true;
+  box.appendChild(verdict);
+
+  // ตั้งเวลาให้ทุก Algorithm เดินทีละ 1 ขั้นตอนพร้อมกัน ใครเสร็จก่อนคือคนที่ใช้ขั้นตอนน้อยกว่า
+  const speeds = [190, 45];
+  let fast = false;
+  const tick = () => {
+    let all = true;
+    tracks.forEach(t => {
+      if (!t.done) stepTrack(t);
+      document.getElementById('cnt-' + t.key).innerHTML = '<b>' + (t.comps + t.swaps) + '</b> ขั้นตอน · เทียบ ' + t.comps + ' · สลับ ' + t.swaps;
+      if (!t.done) all = false;
+    });
+    if (all) { stopTimer(); raceDone(R, chosen, costs, win, ok, verdict); }
+  };
+  const run = () => { stopTimer(); cur.timer = setInterval(tick, speeds[fast ? 1 : 0]); };
+  run();
+  setCaption('กำลังแข่ง… ดูว่าใครเสร็จก่อน');
+  setControls([{ id: 'btnFast', text: '⏩ เร็วขึ้น', fn: () => {
+    fast = !fast; run();
+    const b = $('#btnFast'); if (b) b.textContent = fast ? '▶ ช้าลง' : '⏩ เร็วขึ้น';
+  } }]);
+}
+function explainRound(kind, c, win) {
+  if (kind === 'nearly')
+    return 'ข้อมูลเกือบเรียงอยู่แล้ว Insertion Sort เทียบแค่ราว 1 ครั้งต่อแท่งแล้วหยุด ส่วน Selection Sort ต้องเทียบครบ ' +
+      c.selection.comps + ' ครั้งเสมอ ไม่ว่าข้อมูลจะเรียงมาแล้วแค่ไหน';
+  if (kind === 'reversed')
+    return 'ข้อมูลกลับด้านคือกรณีแย่สุดของ Bubble และ Insertion (สลับถึง ' + c.bubble.swaps + ' ครั้ง) แต่ Selection สลับแค่ ' +
+      c.selection.swaps + ' ครั้ง เพราะวางตัวเล็กสุดเข้าที่ได้ทีเดียวต่อรอบ';
+  const w = win.winners[0];
+  const inv = c.bubble.swaps;                   // จำนวนสลับของ Bubble = จำนวนคู่ผิดลำดับ
+  if (w === 'insertion')
+    return 'ชุดนี้มีคู่ผิดลำดับ ' + inv + ' คู่ Bubble และ Insertion สลับเท่ากับจำนวนนี้ แต่ Insertion หยุดเทียบได้เร็วกว่า Bubble จึงใช้ขั้นตอนน้อยกว่า';
+  if (w === 'selection')
+    return 'ชุดนี้มีคู่ผิดลำดับ ' + inv + ' คู่ Bubble และ Insertion ต้องสลับเท่านี้ แต่ Selection สลับแค่ ' + c.selection.swaps + ' ครั้ง จึงชนะแม้ต้องเทียบครบทุกคู่';
+  return 'Bubble Sort หยุดได้ทันทีที่รอบหนึ่งไม่มีการสลับ ชุดนี้จึงจบเร็วกว่า';
+}
+function raceDone(R, chosen, costs, win, ok, verdict) {
+  win.winners.forEach(k => {
+    const nm = document.querySelector('#row-' + k + ' .race-name');
+    nm.insertAdjacentHTML('beforeend', '<span class="badge">น้อยที่สุด</span>');
+  });
+  if (ok) { cur.correct++; cur.points += (cur.round === 2 ? 34 : 33); }
+  cur.results.push({ label: R.label, chosen: chosen, ok: ok });
+  const names = win.winners.map(k => ALGOS[k].name).join(' / ');
+  verdict.hidden = false;
+  verdict.innerHTML = '<p class="v-head ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'ถูกต้อง!' : 'ยังไม่ถูก') +
+    ' ข้อมูลชุดนี้เป็นแบบ “' + R.label + '” · ' + names + ' ใช้ขั้นตอนน้อยที่สุด (' + win.best + ' ขั้นตอน)</p><p>' +
+    explainRound(R.kind, costs, win) + '</p>';
+  setCaption(ok ? 'ทายถูก!' : 'ทายพลาด ลองดูเหตุผลด้านล่าง', ok ? 'ok' : 'bad');
+  setStats([['ทายถูก', cur.correct + '/' + (cur.round + 1)]]);
+  renderHud();
+  const last = cur.round === 2;
+  setControls([{ id: 'btnNext', text: last ? 'ดูผลด่านนี้ →' : 'รอบถัดไป →', cls: 'primary', fn: () => {
+    if (last) endDetective(); else { cur.round++; detectiveRound(); }
+  } }]);
+}
+function endDetective() {
+  const lines = cur.results.map((r, i) => '<li>รอบ ' + (i + 1) + ' (' + r.label + '): คุณเลือก ' + ALGOS[r.chosen].name + ' → ' + (r.ok ? 'ถูก' : 'ผิด') + '</li>').join('');
+  if (cur.correct >= 2) {
+    finishMission(cur.points, '<p>คะแนน <b>' + cur.points + '</b>/100 · ทายถูก ' + cur.correct + '/3 รอบ</p><ul>' + lines + '</ul>' +
+      '<p>ข้อสรุป: ไม่มี Algorithm ที่ดีที่สุดเสมอไป ต้องดูลักษณะข้อมูลและสิ่งที่ต้องประหยัด (เวลาเทียบ หรือจำนวนครั้งที่สลับ)</p>');
+  } else {
+    lose('ทายถูก ' + cur.correct + '/3 รอบ ต้องถูกอย่างน้อย 2 รอบจึงจะผ่าน', 'ยังไม่ผ่านด่านนี้');
+  }
+}
+
+
+/* ---------- หน้าสรุปผล ---------- */
+function rankOf(total) {
+  if (total >= 270) return { name: 'Sort Master', msg: 'แม่นเกือบสมบูรณ์ คุณเข้าใจทั้งกติกาการทำงานและการเลือก Algorithm ให้เหมาะกับข้อมูล' };
+  if (total >= 230) return { name: 'Sort Expert', msg: 'เก่งมาก เหลือแค่ลดความผิดพลาดอีกนิดก็ได้ Sort Master' };
+  return { name: 'Sort Apprentice', msg: 'ผ่านครบทุกด่านแล้ว ลองเล่นซ้ำเพื่อทำคะแนนให้สูงขึ้น (ตอบผิดน้อยลง ทายแม่นขึ้น)' };
+}
+function showResult() {
+  hideOverlay();
+  show('result');
+  const total = totalScore(), rk = rankOf(total);
+  const names = ['ด่าน 1 · Bubble Sort', 'ด่าน 2 · Selection Sort', 'ด่าน 3 · นักสืบ Algorithm'];
+  $('#screen-result').innerHTML =
+    '<div style="padding-block:18px 4px"><p class="eyebrow">สรุปผล</p><h1 class="rank">' + rk.name + '</h1>' +
+    '<p class="big-score"><b>' + total + '</b>/300</p><p class="lead">' + rk.msg + '</p></div>' +
+    '<div class="card"><h2 class="sec" style="margin-top:0">คะแนนแต่ละด่าน</h2><ul class="score-list">' +
+    names.map((n, i) => '<li><span>' + n + '</span><span>' + (state.scores[i] === null ? '-' : state.scores[i]) + '/100</span></li>').join('') +
+    '</ul></div>' +
+    '<h2 class="sec">สิ่งที่ควรจำจากเกมนี้</h2><div class="cards3">' +
+    '<div class="card algo-card"><h3>Bubble Sort</h3><dl><dt>แนวคิด</dt><dd>เทียบคู่ข้างกัน สลับถ้าผิดลำดับ</dd><dt>เวลา</dt><dd>O(n²) · ดีสุด O(n) ถ้าหยุดเมื่อไม่มีการสลับ</dd><dt>การสลับ</dt><dd>เท่ากับจำนวนคู่ที่ผิดลำดับ</dd><dt>เหมาะกับ</dt><dd>ใช้เรียนรู้ และข้อมูลน้อยมาก</dd></dl></div>' +
+    '<div class="card algo-card"><h3>Selection Sort</h3><dl><dt>แนวคิด</dt><dd>หาตัวเล็กสุดของส่วนที่เหลือ แล้วสลับมาไว้หน้า</dd><dt>เวลา</dt><dd>O(n²) เสมอ ไม่ว่าข้อมูลจะเรียงมาแค่ไหน</dd><dt>การสลับ</dt><dd>ไม่เกิน n−1 ครั้ง</dd><dt>เหมาะกับ</dt><dd>งานที่การสลับหรือเขียนข้อมูลมีต้นทุนสูง</dd></dl></div>' +
+    '<div class="card algo-card"><h3>Insertion Sort</h3><dl><dt>แนวคิด</dt><dd>แทรกแท่งถัดไปลงในส่วนที่เรียงแล้ว</dd><dt>เวลา</dt><dd>O(n²) · ดีสุด O(n) เมื่อข้อมูลเกือบเรียง</dd><dt>การสลับ</dt><dd>เท่ากับจำนวนคู่ที่ผิดลำดับ</dd><dt>เหมาะกับ</dt><dd>ข้อมูลน้อย หรือเกือบเรียงอยู่แล้ว</dd></dl></div>' +
+    '</div><div class="btnrow result-actions"><button type="button" class="btn primary big" id="btnReplay">เล่นใหม่ทั้งหมด</button>' +
+    '<button type="button" class="btn big" id="btnToHome">หน้าแรก</button></div>';
+  $('#btnReplay').addEventListener('click', () => { state.scores = [null, null, null]; renderTotal(); enterMission(0); });
+  $('#btnToHome').addEventListener('click', () => show('home'));
+}
+
+
+/* ---------- เริ่มเกม ---------- */
+$('#btnHome').addEventListener('click', () => show('home'));
+$('#btnStart').addEventListener('click', () => {
+  if (allPassed()) { state.scores = [null, null, null]; renderTotal(); enterMission(0); return; }
+  const first = state.scores.findIndex(s => s === null);
+  enterMission(first < 0 ? 0 : first);
+});
+$('#btnResult').addEventListener('click', showResult);
+show('home');
+</script>
+</body>
+</html>
